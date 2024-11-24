@@ -1,0 +1,5 @@
+Flask==2.0.1
+Pillow==9.5.0
+rembg==2.0.50
+numpy==1.24.3
+werkzeug==2.0.3

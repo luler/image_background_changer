@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图片背景替换工具</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .left-column, .middle-column, .right-column {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 0 !important;
+        }
+
+        .card-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .image-upload-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .preview-container {
+            flex: 1;
+            width: 100%;
+            padding-top: 0 !important;
+            margin: 0 0 20px 0 !important;
+            border: 2px dashed #ccc;
+            position: relative;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            min-height: 300px;
+            height: 100%;
+        }
+
+        .preview-content {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+        }
+
+        .preview-image {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            border-radius: 4px;
+        }
+
+        .background-options {
+            width: 100%;
+            height: 120px;
+            position: relative;
+            margin: 0;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            overflow-x: auto;
+            overflow-y: hidden;
+            white-space: nowrap;
+            padding: 10px;
+        }
+
+        .background-grid {
+            display: inline-flex;
+            gap: 10px;
+            padding: 0;
+        }
+
+        .background-option-wrapper {
+            position: relative;
+            width: 120px;
+            height: 90px;
+            flex-shrink: 0;
+        }
+
+        .background-option {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            cursor: pointer;
+            border: 2px solid transparent;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .background-option:hover {
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .background-option.selected {
+            border-color: #007bff;
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+        }
+
+        /* 自定义滚动条样式 */
+        .background-options::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .background-options::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .background-options::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+
+        .background-options::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        #loading {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .custom-file-upload {
+            display: inline-block;
+            padding: 10px 20px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border-radius: 4px;
+            margin: 10px 0;
+            transition: all 0.2s ease;
+            border: none;
+            font-size: 14px;
+            font-weight: 500;
+            text-align: center;
+            min-width: 120px;
+        }
+
+        .custom-file-upload:hover {
+            background-color: #0056b3;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .preview-placeholder {
+            color: #6c757d;
+            font-size: 1.1em;
+            text-align: center;
+            padding: 20px;
+        }
+
+        #customBackgroundPreview {
+            margin-top: 20px;
+            display: none;
+        }
+
+        .card {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border: none;
+            margin-bottom: 0;
+            border-radius: 8px;
+            height: auto;
+        }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        .card-title {
+            color: #495057;
+            font-size: 1.25rem;
+            margin-bottom: 1.5rem;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .image-upload-section {
+            text-align: center;
+        }
+
+        .button-group {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .result-card {
+            height: auto;
+        }
+
+        .result-card .card-body {
+            padding: 1.5rem;
+        }
+
+        .result-card .preview-container {
+            margin: 0;
+        }
+
+        @media (min-width: 1400px) {
+            .main-container {
+                display: flex;
+                gap: 20px;
+                justify-content: space-between;
+                align-items: stretch;
+                min-height: calc(100vh - 100px);
+                padding: 20px 0;
+            }
+            .left-column, .middle-column, .right-column {
+                width: calc(33.33% - 14px);
+                min-width: 350px;
+            }
+        }
+
+        @media (max-width: 1399px) {
+            .main-container {
+                display: flex;
+                flex-direction: column;
+                gap: 20px;
+                padding: 20px 0;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .preview-container {
+                padding-top: 100%; /* 在移动端使用1:1比例 */
+            }
+            
+            .background-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            }
+            
+            .custom-file-upload {
+                padding: 8px 16px;
+                font-size: 13px;
+                min-width: 100px;
+            }
+        }
+
+        @media (min-width: 1920px) {
+            .container-fluid {
+                max-width: 1920px;
+                margin: 0 auto;
+                padding: 0 40px;
+            }
+            
+            .preview-container {
+                padding-top: 45%; /* 调整预览容器的高度比例 */
+            }
+
+            .background-options {
+                height: 110px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <h1 class="text-center mb-4">图片背景替换工具</h1>
+        <div class="main-container">
+            <div class="left-column">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">上传原图</h5>
+                        <div class="image-upload-section">
+                            <div class="preview-container">
+                                <div class="preview-content">
+                                    <div class="preview-placeholder">点击下方按钮上传原图</div>
+                                    <img id="originalPreview" class="preview-image" src="" alt="预览图" style="display: none;">
+                                </div>
+                            </div>
+                            <div class="button-group">
+                                <label class="custom-file-upload">
+                                    <input type="file" id="imageInput" accept="image/*">
+                                    选择图片
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="middle-column">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">选择背景</h5>
+                        <div class="image-upload-section">
+                            <div class="preview-container">
+                                <div class="preview-content">
+                                    <div class="preview-placeholder">选择或上传背景图片</div>
+                                    <img id="backgroundPreview" class="preview-image" src="" alt="背景预览" style="display: none;">
+                                </div>
+                            </div>
+                            <div class="background-options">
+                                <div class="background-grid">
+                                    {% for bg in backgrounds %}
+                                    <div class="background-option-wrapper">
+                                        <img src="{{ url_for('static', filename='backgrounds/' + bg) }}" 
+                                             class="background-option" 
+                                             data-filename="{{ bg }}"
+                                             onclick="selectBackground(this)">
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="button-group">
+                                <label class="custom-file-upload">
+                                    <input type="file" id="backgroundInput" accept="image/*">
+                                    上传自定义背景
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="right-column">
+                <div class="card result-card">
+                    <div class="card-body">
+                        <h5 class="card-title">处理结果</h5>
+                        <div class="image-upload-section">
+                            <div class="preview-container">
+                                <div class="preview-content">
+                                    <div class="preview-placeholder">处理结果将在这里显示</div>
+                                    <img id="resultPreview" class="preview-image" src="" alt="处理结果" style="display: none;">
+                                </div>
+                            </div>
+                            <div class="button-group mt-auto">
+                                <button id="processButton" class="custom-file-upload" onclick="processImage()">开始处理</button>
+                                <button id="downloadButton" class="custom-file-upload" style="display: none;" onclick="downloadResult()">
+                                    下载结果
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="loading">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">处理中...</span>
+        </div>
+    </div>
+
+    <script>
+        let selectedBackground = null;
+        let resultImage = null;
+
+        // 页面加载完成后自动选择第一张背景图片
+        document.addEventListener('DOMContentLoaded', function() {
+            const firstBackground = document.querySelector('.background-option');
+            if (firstBackground) {
+                selectBackground(firstBackground);
+            }
+        });
+
+        function previewImage(input, previewId) {
+            const preview = document.getElementById(previewId);
+            const file = input.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                    // 隐藏占位符文本
+                    preview.parentElement.querySelector('.preview-placeholder').style.display = 'none';
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        document.getElementById('imageInput').addEventListener('change', function() {
+            previewImage(this, 'originalPreview');
+        });
+
+        document.getElementById('backgroundInput').addEventListener('change', function() {
+            previewImage(this, 'backgroundPreview');
+            // 取消之前选中的预设背景
+            document.querySelectorAll('.background-option').forEach(bg => {
+                bg.classList.remove('selected');
+            });
+            selectedBackground = null;
+        });
+
+        function selectBackground(element) {
+            document.querySelectorAll('.background-option').forEach(bg => {
+                bg.classList.remove('selected');
+            });
+            element.classList.add('selected');
+            selectedBackground = element.dataset.filename;
+            
+            // 更新预览图
+            const preview = document.getElementById('backgroundPreview');
+            preview.src = element.src;
+            preview.style.display = 'block';
+            preview.parentElement.querySelector('.preview-placeholder').style.display = 'none';
+            
+            // 清除自定义背景输入
+            document.getElementById('backgroundInput').value = '';
+        }
+
+        function processImage() {
+            const imageInput = document.getElementById('imageInput');
+            const backgroundInput = document.getElementById('backgroundInput');
+            
+            if (!imageInput.files[0]) {
+                alert('请选择要处理的图片');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', imageInput.files[0]);
+
+            if (selectedBackground) {
+                formData.append('background_choice', selectedBackground);
+            } else if (backgroundInput.files[0]) {
+                formData.append('background', backgroundInput.files[0]);
+            }
+
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('processButton').disabled = true;
+
+            fetch('/process', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    resultImage = data.image;
+                    const resultPreview = document.getElementById('resultPreview');
+                    resultPreview.src = 'data:image/png;base64,' + data.image;
+                    resultPreview.style.display = 'block';
+                    document.getElementById('resultPreview').parentElement.querySelector('.preview-placeholder').style.display = 'none';
+                    document.getElementById('downloadButton').style.display = 'inline-block';
+                }
+            })
+            .catch(error => {
+                alert('处理过程中出错: ' + error);
+            })
+            .finally(() => {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('processButton').disabled = false;
+            });
+        }
+
+        function downloadResult() {
+            if (!resultImage) return;
+            
+            const link = document.createElement('a');
+            link.href = 'data:image/png;base64,' + resultImage;
+            link.download = 'processed_image.png';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>
